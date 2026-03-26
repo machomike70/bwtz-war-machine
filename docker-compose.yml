@@ -1,0 +1,96 @@
+version: "3.9"
+
+services:
+  gateway-api:
+    image: python:3.11-slim
+    command: python -m http.server 8000
+    working_dir: /app
+    volumes:
+      - ./apps/gateway-api:/app
+    ports:
+      - "8000:8000"
+
+  agent-orchestrator:
+    image: python:3.11-slim
+    command: python -m http.server 8001
+    working_dir: /app
+    volumes:
+      - ./apps/agent-orchestrator:/app
+    ports:
+      - "8001:8001"
+
+  retrieval-service:
+    image: python:3.11-slim
+    command: python -m http.server 8002
+    working_dir: /app
+    volumes:
+      - ./apps/retrieval-service:/app
+    ports:
+      - "8002:8002"
+
+  memory-service:
+    image: python:3.11-slim
+    command: python -m http.server 8003
+    working_dir: /app
+    volumes:
+      - ./apps/memory-service:/app
+    ports:
+      - "8003:8003"
+
+  tool-service:
+    image: python:3.11-slim
+    command: python -m http.server 8004
+    working_dir: /app
+    volumes:
+      - ./apps/tool-service:/app
+    ports:
+      - "8004:8004"
+
+  guardrail-service:
+    image: python:3.11-slim
+    command: python -m http.server 8005
+    working_dir: /app
+    volumes:
+      - ./apps/guardrail-service:/app
+    ports:
+      - "8005:8005"
+
+  eval-service:
+    image: python:3.11-slim
+    command: python -m http.server 8006
+    working_dir: /app
+    volumes:
+      - ./apps/eval-service:/app
+    ports:
+      - "8006:8006"
+
+  worker:
+    image: python:3.11-slim
+    command: python -c "import time; print('worker running'); time.sleep(3600)"
+    working_dir: /app
+    volumes:
+      - ./apps/worker:/app
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ai_stack
+      POSTGRES_USER: ai_stack
+      POSTGRES_PASSWORD: change-me
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
