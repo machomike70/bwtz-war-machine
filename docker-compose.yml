@@ -1,21 +1,11 @@
-version: "3.9"
-
-services:
+﻿services:
   gateway-api:
-    image: python:3.11-slim
-    command: python -m http.server 8000
-    working_dir: /app
-    volumes:
-      - ./apps/gateway-api:/app
+    build: ./apps/gateway-api
     ports:
       - "8000:8000"
 
   agent-orchestrator:
-    image: python:3.11-slim
-    command: python -m http.server 8001
-    working_dir: /app
-    volumes:
-      - ./apps/agent-orchestrator:/app
+    build: ./apps/agent-orchestrator
     ports:
       - "8001:8001"
 
