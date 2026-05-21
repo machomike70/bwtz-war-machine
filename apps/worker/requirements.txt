@@ -1,0 +1,7 @@
+apscheduler>=3.10.4
+psycopg[binary]>=3.2.0
+httpx>=0.27.0
+pydantic>=2.9.0
+python-dotenv>=1.0.0
+fastapi>=0.115.0   # if we expose a small control API from worker later
+uvicorn[standard]>=0.30.0

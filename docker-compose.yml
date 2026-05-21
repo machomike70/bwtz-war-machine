@@ -98,11 +98,20 @@ services:
       - "8006:8006"
 
   worker:
-    image: python:3.11-slim
-    command: python -c "import time; print('worker running'); time.sleep(3600)"
-    working_dir: /app
+    build: ./apps/worker
     volumes:
       - ./apps/worker:/app
+    environment:
+      - ORCHESTRATOR_URL=http://agent-orchestrator:8001
+      - DATABASE_URL=postgresql://ai_stack:change-me@postgres:5432/ai_stack
+      - SCHEDULER_ENABLED=true
+      - DAILY_POST_TIMES=08:00,20:00
+    depends_on:
+      postgres:
+        condition: service_healthy
+      agent-orchestrator:
+        condition: service_healthy
+    restart: unless-stopped
 
   # --- Infrastructure ---
   postgres:
