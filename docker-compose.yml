@@ -1,14 +1,57 @@
-﻿services:
+version: "3.9"
+
+services:
   gateway-api:
     build: ./apps/gateway-api
     ports:
       - "8000:8000"
+    environment:
+      - ORCHESTRATOR_URL=http://agent-orchestrator:8001
+      - X_TWITTER_BOT_URL=http://x-twitter-bot:8008
+    depends_on:
+      agent-orchestrator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
 
   agent-orchestrator:
     build: ./apps/agent-orchestrator
     ports:
       - "8001:8001"
+    volumes:
+      # Dev hot-reload (remove or comment for production builds)
+      - ./apps/agent-orchestrator:/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8001/') or sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
 
+  # --- X Growth Bot Service (Phase 1 will add real X posting + scheduler logic) ---
+  x-twitter-bot:
+    build:
+      context: ./apps/x-twitter-bot
+      dockerfile: Dockerfile
+    ports:
+      - "8008:8008"
+    volumes:
+      - ./apps/x-twitter-bot:/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8008/') or sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # --- AI Microservices (Phase 2+: replace http.server stubs with real FastAPI apps) ---
   retrieval-service:
     image: python:3.11-slim
     command: python -m http.server 8002
@@ -61,6 +104,7 @@
     volumes:
       - ./apps/worker:/app
 
+  # --- Infrastructure ---
   postgres:
     image: postgres:16-alpine
     environment:
@@ -69,18 +113,46 @@
       POSTGRES_PASSWORD: change-me
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai_stack"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   prometheus:
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
 
   grafana:
     image: grafana/grafana:latest
     ports:
       - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  postgres_data:
+  grafana_data:
+
+# Notes:
+# - Phase 0: gateway + agent-orchestrator + x-twitter-bot (stubs) are the focus.
+# - Many AI services remain lightweight placeholders until Phase 2+.
+# - For local dev on Windows, the volume mounts enable live code changes.
+# - Run: docker compose up --build gateway-api agent-orchestrator x-twitter-bot

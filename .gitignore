@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Environment & secrets (CRITICAL)
+.env
+.env.local
+*.txt
+!requirements*.txt
+!*.example
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Docker volumes / data
+postgres_data/
+grafana_data/
+
+# Logs
+*.log
+
+# Temporary / notes the user created
+*from fastapi import FastAPI*.txt
+*python odoo-bin*.txt
+*ssh-keygen*.txt
+wurlitzer.html
+
+# Any loose credential dumps
+X API/
+X API SECRETS/
+*API and Secret*/
+
+# Large binary / media the user has in Desktop (not part of this repo)
+*.mp4
+*.zip
+*.pdf
+*.png
+*.jpg
+*.exe
+*.msi
+
+# Keep the plan and handoff docs
+!grok_handoff_ai_stack.md
+!BWTZ_BTCK_Project_Handoff.md
