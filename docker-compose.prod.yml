@@ -1,0 +1,108 @@
+version: "3.9"
+
+# Production Compose for Bwtz War Machine on Hetzner
+# Usage: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  caddy:
+    image: caddy:2
+    container_name: bwtz-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      agent-orchestrator:
+        condition: service_healthy
+    networks:
+      - bwtz-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: bwtz-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bwtz_war_machine}
+      POSTGRES_USER: ${POSTGRES_USER:-bwtz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bwtz}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bwtz-net
+
+  agent-orchestrator:
+    build:
+      context: ./apps/agent-orchestrator
+      dockerfile: Dockerfile
+    container_name: bwtz-orchestrator
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-bwtz}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-bwtz_war_machine}
+      - SCHEDULER_ENABLED=${SCHEDULER_ENABLED:-true}
+      - DAILY_POST_TIMES=${DAILY_POST_TIMES:-08:00,20:00}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8001/healthz') or sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - bwtz-net
+
+  worker:
+    build:
+      context: ./apps/worker
+      dockerfile: Dockerfile
+    container_name: bwtz-worker
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-bwtz}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-bwtz_war_machine}
+      - ORCHESTRATOR_URL=http://agent-orchestrator:8001
+      - SCHEDULER_ENABLED=${SCHEDULER_ENABLED:-true}
+      - DAILY_POST_TIMES=${DAILY_POST_TIMES:-08:00,20:00}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      agent-orchestrator:
+        condition: service_healthy
+    networks:
+      - bwtz-net
+
+  x-twitter-bot:
+    build:
+      context: ./apps/x-twitter-bot
+      dockerfile: Dockerfile
+    container_name: bwtz-xbot
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-bwtz}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-bwtz_war_machine}
+      - X_API_KEY=${X_API_KEY}
+      - X_API_KEY_SECRET=${X_API_KEY_SECRET}
+      - X_ACCESS_TOKEN=${X_ACCESS_TOKEN}
+      - X_ACCESS_TOKEN_SECRET=${X_ACCESS_TOKEN_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bwtz-net
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  bwtz-net:
+    driver: bridge

@@ -1,0 +1,109 @@
+# =============================================================================
+# .dockerignore for AI STACK (TextRp X Growth Bot)
+# Prevents secrets, build artifacts, and Desktop junk from entering Docker context
+# =============================================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Secrets & environment (CRITICAL - never ship real keys)
+.env
+.env.local
+.env.*
+!.env.example
+*.txt
+!requirements*.txt
+!*.example
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Documentation, tests, plans (smaller images)
+docs/
+tests/
+*.md
+!README.md
+!LICENSE*
+grok_handoff*.md
+*BWTZ*Handoff*.md
+
+# Docker build files themselves
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Logs & temp
+*.log
+tmp/
+temp/
+
+# Large media / binaries commonly on the host Desktop (audit artifacts)
+*.mp4
+*.zip
+*.tar.gz
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.exe
+*.msi
+*.dmg
+
+# Credential sprawl patterns from the Desktop audit (defense in depth)
+*API and Secret*/
+*X API*/
+*X API SECRETS*/
+*Xaman*/
+*wallet*seed*/
+*Security*Key*
+*github*token*
+*TextRP*Security*
+*api*secret*/
+*dev*wallet*/
+*joey*key*/
+*quantzilla*/
+*war*machine*/
+*bear*witness*/
+
+# Anything that looks like a raw key dump
+*seed*
+*token*
+*secret*
+*key.txt
+*access*.txt

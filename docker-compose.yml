@@ -1,8 +1,8 @@
-version: "3.9"
-
 services:
   gateway-api:
-    build: ./apps/gateway-api
+    build:
+      context: ./apps/gateway-api
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -34,7 +34,7 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # --- X Growth Bot Service (Phase 1 will add real X posting + scheduler logic) ---
+  # --- X Growth Bot Service (Phase 1-2: real safe X posting engine with human-in-the-loop) ---
   x-twitter-bot:
     build:
       context: ./apps/x-twitter-bot
@@ -43,6 +43,15 @@ services:
       - "8008:8008"
     volumes:
       - ./apps/x-twitter-bot:/app
+    environment:
+      - DATABASE_URL=postgresql://ai_stack:change-me@postgres:5432/ai_stack
+      - X_API_KEY=${X_API_KEY:-}
+      - X_API_KEY_SECRET=${X_API_KEY_SECRET:-}
+      - X_ACCESS_TOKEN=${X_ACCESS_TOKEN:-}
+      - X_ACCESS_TOKEN_SECRET=${X_ACCESS_TOKEN_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8008/') or sys.exit(1)"]
       interval: 30s
@@ -112,6 +121,28 @@ services:
       agent-orchestrator:
         condition: service_healthy
     restart: unless-stopped
+
+  # --- Test runner (use: docker compose run --rm test  or  make test) ---
+  # Runs pytest with mocks (core daily flow coverage). Does not require live DB for unit tests.
+  test:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://ai_stack:change-me@postgres:5432/ai_stack
+      - ORCHESTRATOR_URL=http://agent-orchestrator:8001
+      - SCHEDULER_ENABLED=false
+    command: >
+      sh -c "
+        pip install --no-cache-dir -q pytest pytest-mock httpx 'psycopg[binary]' python-dotenv apscheduler fastapi uvicorn pydantic tweepy -r ./apps/agent-orchestrator/requirements.txt -r ./apps/worker/requirements.txt -r ./apps/x-twitter-bot/requirements.txt &&
+        python -m pytest tests/ -q --tb=short -m 'not integration'
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
 
   # --- Infrastructure ---
   postgres:

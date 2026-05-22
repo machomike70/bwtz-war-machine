@@ -1,5 +1,5 @@
 """
-TextRp X Growth Bot - Worker Service (Phase 1)
+Bwtz War Machine - Worker Service (Phase 1)
 
 Responsible for:
 - Running the daily scheduler (APScheduler)
@@ -11,9 +11,8 @@ This runs as a long-lived container (like the old stub).
 """
 
 import os
-import json
 import logging
-from datetime import datetime, date, timedelta
+from datetime import date
 from typing import List, Dict, Any
 
 import httpx
@@ -68,13 +67,28 @@ def init_db():
                     UNIQUE (account_handle, scheduled_for, content)
                 );
             """)
+            # X posting queue for safe human-in-the-loop workflow (used by x-twitter-bot)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS x_post_queue (
+                    id SERIAL PRIMARY KEY,
+                    account_handle TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    status TEXT DEFAULT 'queued',  -- queued, confirmed, posted, failed
+                    previewed BOOLEAN DEFAULT FALSE,
+                    tweet_id TEXT,
+                    post_url TEXT,
+                    error_message TEXT,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                );
+            """)
             # Seed accounts
             for handle in ACCOUNTS:
                 cur.execute(
                     "INSERT INTO accounts (handle) VALUES (%s) ON CONFLICT (handle) DO NOTHING",
                     (handle,)
                 )
-    logger.info("Database initialized (tables + seed accounts ready)")
+    logger.info("Database initialized (tables + seed accounts + x_post_queue ready for safe posting)")
 
 
 def fetch_or_generate_daily() -> Dict[str, List[str]]:
@@ -161,7 +175,7 @@ def start_scheduler():
         logger.info(f"Scheduled daily job at {t} UTC")
 
     scheduler.start()
-    logger.info("APScheduler started for TextRp X Growth Bot")
+    logger.info("APScheduler started for Bwtz War Machine")
     return scheduler
 
 
@@ -171,6 +185,10 @@ def main():
 
     if SCHEDULER_ENABLED:
         sched = start_scheduler()
+        # Run once immediately on startup so today's posts are available in the dashboard
+        # without waiting for the next cron time. Safe to call repeatedly (ON CONFLICT).
+        logger.info("Running initial daily generation for today...")
+        scheduled_job()
     else:
         logger.info("Scheduler disabled via env (SCHEDULER_ENABLED=false)")
 

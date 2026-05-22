@@ -55,10 +55,29 @@ grafana_data/
 *ssh-keygen*.txt
 wurlitzer.html
 
-# Any loose credential dumps
+# Any loose credential dumps (expanded from 2026 Desktop secret sprawl audit)
 X API/
 X API SECRETS/
 *API and Secret*/
+*Xaman*/
+*wallet*seed*/
+*Security*Key*
+*github*access*token*
+*TextRP*Security*
+*X*API*/
+*api*secret*
+*dev*wallet*seed*
+*joey*key*/
+*quantzilla*/
+*war*machine*/
+*bear*witness*api*/
+
+# Also catch loose files that often contain keys (even without extension)
+*token*
+*pat*
+*seed.txt
+*key.txt
+*secret.txt
 
 # Large binary / media the user has in Desktop (not part of this repo)
 *.mp4

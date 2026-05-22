@@ -1,0 +1,22 @@
+# Bwtz War Machine - Caddy Configuration
+# Domain: war.xtremerippleprotocol.online
+
+war.xtremerippleprotocol.online {
+    # Reverse proxy to the Bwtz War Machine dashboard
+    reverse_proxy agent-orchestrator:8001
+
+    # Security headers
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Optional: Increase timeouts for long operations
+    encode gzip
+}
+
+# Future: You can add more routes here, e.g.
+# api.war.xtremerippleprotocol.online {
+#     reverse_proxy x-twitter-bot:8008
+# }
